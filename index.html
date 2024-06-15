@@ -1,131 +1,52 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Bubble Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDKzYeKdwzoRJxITEKpuaojGcQ54GpRwkA"></script>
+<head>
+    <title>Data Produksi Mangga Jawa Barat</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script>
-      var map;
-      var markers = [];
-
-      function readCSVFile() {
-        fetch('data_mangga_2013.csv')
-            .then(response => response.text())
-            .then(csvText => {
-                // Parsing CSV menggunakan PapaParse
-                Papa.parse(csvText, {
-                    header: true,
-                    complete: function(results) {
-                        var data = results.data;
-                        // Loop melalui setiap baris data
-                        data.forEach(function(row) {
-                            // Ambil data yang diperlukan
-                            var location = {
-                                name: row.nama_kabupaten_kota,
-                                lat: parseFloat(row.titik_latitude),
-                                lng: parseFloat(row.titik_longitude),
-                                value: parseInt(row.produksi_mangga)
-                            };
-                            // Tambahkan marker ke peta
-                            addMarker(location);
-                        });
-                    },
-                    error: function(error) {
-                        console.error("Error parsing CSV:", error);
-                    }
-                });
-            })
-            .catch(error => console.error("Error fetching CSV:", error));
-}
-
-
-      function initMap() {
-        map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat: -6.914744, lng: 107.609810}, // Pusat peta di Jawa Barat
-          zoom: 8
-        });
-
-        // Contoh data lokasi dengan nilai
-        readCSVFile();
-
-        var initialScale = markers[0].getIcon().scale;
-
-        // Tambahkan event listener untuk memantau perubahan zoom
-        google.maps.event.addListener(map, 'zoom_changed', function() {
-          updateMarkerSize();
-        }); 
-      }
-
-      function addMarker(location) {
-        var marker = new google.maps.Marker({
-            position: {lat: location.lat, lng: location.lng},
-            map: map,
-            // Ukuran bubble awal
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: 'red',
-                fillOpacity: 0.7,
-                strokeWeight: 0,
-                scale: Math.sqrt(location.value) * 0.1  // Atur ukuran bubble sesuai dengan nilai
-            }
-        });
-
-        // Tambahkan info window
-        var infoWindow = new google.maps.InfoWindow({
-            content: '<div><strong>' + location.name + '</strong><br>Produksi: ' + location.value +'</strong> kwintal' + '</div>'
-        });
-
-        // Event listener untuk hover
-        marker.addListener('mouseover', function() {
-            infoWindow.open(map, marker);
-        });
-
-        // Event listener untuk saat kursor mouse meninggalkan marker
-        marker.addListener('mouseout', function() {
-            infoWindow.close();
-        });
-
-        markers.push(marker);
-    }
-
-    
-
-      function updateMarkerSize() {
-        var zoom = map.getZoom();
-        var zoomDirection = zoom > currentZoom ? 'scrolldown' : 'scrollup'; // Tentukan arah zoom
-
-        // Perbarui ukuran bubble sesuai dengan level zoom
-        markers.forEach(function(marker) {
-          var currentScale = marker.getIcon().scale;
-          var newScale = currentScale;
-
-          // Jika skala marker melebihi skala awal objek, gunakan skala awal objek
-          if (currentScale > initialScale && zoomDirection === 'scrollup') {
-            newScale = initialScale;
-          } else {
-            // Sesuaikan ukuran marker berdasarkan arah zoom
-            if (zoomDirection === 'scrollup') {
-              newScale *= 1.1; // Jika scrollup, tambahkan 10% dari ukuran sebelumnya
-            } else if (zoomDirection === 'scrolldown') {
-              newScale *= 0.9; // Jika scrolldown, kurangi 10% dari ukuran sebelumnya
-            }
-          }
-
-        marker.setIcon({
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: 'red',
-          fillOpacity: 0.7,
-          strokeWeight: 0,
-          scale: newScale
-        });
-      });
-
-      // Simpan zoom saat ini untuk digunakan di iterasi berikutnya
-      currentZoom = zoom;
-}
-    </script>
-  </head>
-  <body onload="initMap()">
-    <div id="map" style="width: 100%; height: 600px;"></div>
-  </body>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.1.1/d3.min.js"></script>
+    <script src="script1.js"></script>
+    <style>
+        #map {
+            height: 400px;
+            width: 90%;
+        }
+        #legend {
+            background: white;
+            padding: 10px;
+            margin: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+            display: none;  /* Initially hide the legend */
+        }
+    </style>
+</head>
+<body onload="initMap()">
+    <h1>Data Produksi Mangga Jawa Barat</h1>
+    <div id="map"></div>
+    <div id="legend">
+        <h3>Legenda Produksi Mangga</h3>
+        <div><span style="height: 10px; width: 10px; background-color: hsl(120, 100%, 50%); display: inline-block;"></span> Rendah (&lt; 100k kuintal)</div>
+        <div><span style="height: 10px; width: 10px; background-color: hsl(60, 100%, 50%); display: inline-block;"></span> Sedang (100k - 500k kuintal)</div>
+        <div><span style="height: 10px; width: 10px; background-color: hsl(0, 100%, 50%); display: inline-block;"></span> Tinggi (&gt; 500k kuintal)</div>
+    </div>
+    <h3>Tahun</h3>
+    <div id="controls">
+      <button onclick="loadPreviousYear()">Previous</button>
+      <span id="yearLabel"></span>
+      <button onclick="loadNextYear()">Next</button>
+    </div>
+    <div class="container">
+    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+    <button id="prevBtn">Previous</button>
+    <button id="nextBtn">Next</button>
+    <script src="script.js"></script>
+    </div>
+</body>
 </html>

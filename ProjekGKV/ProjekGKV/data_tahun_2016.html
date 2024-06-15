@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mango Production Pie Chart</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        // Path to your CSV file (relative path)
+        const csvFilePath = "data_mangga_2016.csv";
+        
+        Papa.parse(csvFilePath, {
+          download: true,
+          header: true,
+          complete: function(results) {
+            const dataArray = [['Nama Kabupaten/Kota', 'Produksi Mangga']];
+            
+            results.data.forEach(row => {
+              dataArray.push([row.nama_kabupaten_kota, parseFloat(row.produksi_mangga)]);
+            });
+            
+            var data = google.visualization.arrayToDataTable(dataArray);
+            
+            var options = {
+              title: 'Produksi Mangga pada Tahun 2016'
+            };
+
+            var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+            chart.draw(data, options);
+          }
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="piechart" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>

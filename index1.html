@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bubble Map Produksi Mangga Jawa Barat</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDKzYeKdwzoRJxITEKpuaojGcQ54GpRwkA"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+      var map;
+      var markers = [];
+      var currentYear = 2013; // Tahun awal
+      var minYear = 2013; // Tahun terawal
+      var maxYear = 2022; // Tahun terakhir
+
+      function initMap() {
+        // Inisialisasi peta
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: { lat: -6.914744, lng: 107.609810 }, // Pusat peta di Jawa Barat
+          zoom: 8
+        });
+
+        // Membaca file CSV awal
+        readCSVFile(currentYear);
+      }
+
+      function readCSVFile(year) {
+        var filename = `data_mangga_${year}.csv`;
+        fetch(filename)
+          .then(response => response.text())
+          .then(csvText => {
+            // Parsing CSV menggunakan PapaParse
+            Papa.parse(csvText, {
+              header: true,
+              complete: function (results) {
+                var data = results.data;
+                // Loop melalui setiap baris data
+                data.forEach(function (row) {
+                  // Ambil data yang diperlukan
+                  var location = {
+                    name: row.nama_kabupaten_kota,
+                    lat: parseFloat(row.titik_latitude),
+                    lng: parseFloat(row.titik_longitude),
+                    value: parseInt(row.produksi_mangga)
+                  };
+                  // Tambahkan marker ke peta
+                  addMarker(location);
+                });
+              },
+              error: function (error) {
+                console.error("Error parsing CSV:", error);
+              }
+            });
+          })
+          .catch(error => console.error("Error fetching CSV:", error));
+      }
+
+      function addMarker(location) {
+        var marker = new google.maps.Marker({
+          position: { lat: location.lat, lng: location.lng },
+          map: map,
+          title: location.name + ': ' + location.value,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: 'red',
+            fillOpacity: 0.7,
+            strokeWeight: 0,
+            scale: Math.sqrt(location.value) * 5 // Atur ukuran bubble sesuai dengan nilai
+          }
+        });
+
+        var infowindow = new google.maps.InfoWindow({
+          content: `<strong>${location.name}</strong><br>Produksi: ${location.value}`
+        });
+
+        marker.addListener('mouseover', function() {
+          infowindow.open(map, marker);
+        });
+
+        marker.addListener('mouseout', function() {
+          infowindow.close();
+        });
+
+        markers.push(marker);
+      }
+
+      function updateCSVFile(year) {
+        // Hapus semua marker yang ada
+        markers.forEach(marker => marker.setMap(null));
+        markers = [];
+
+        // Baca file CSV yang baru
+        readCSVFile(year);
+      }
+
+      function previousYear() {
+        if (currentYear > minYear) {
+          currentYear--;
+          updateCSVFile(currentYear);
+        } else {
+          alert('Data for previous years is not available.');
+        }
+      }
+
+      function nextYear() {
+        if (currentYear < maxYear) {
+          currentYear++;
+          updateCSVFile(currentYear);
+        } else {
+          alert('Data for next years is not available.');
+        }
+      }
+
+      // Panggil fungsi initMap saat halaman dimuat
+      function loadScript() {
+        var script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+
+      window.onload = loadScript;
+    </script>
+    <style>
+      #map {
+        width: 100%;
+        height: 600px;
+      }
+      .button-container {
+        margin: 20px;
+        text-align: center;
+      }
+      .button-container button {
+        margin: 0 10px;
+        padding: 10px 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div class="button-container">
+      <button onclick="previousYear()">Previous Year</button>
+      <button onclick="nextYear()">Next Year</button>
+    </div>
+  </body>
+</html>
